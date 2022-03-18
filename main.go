@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"math/rand"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -14,75 +12,43 @@ const SLEEP = 400
 
 var passLength, maxDigit, tries int
 var repeatAllowed bool
+var rnd *rand.Rand
 
 func readInput(notification string) string {
-	reader := bufio.NewReader(os.Stdin)
+	// reader := bufio.NewReader(os.Stdin)
 	fmt.Print(notification)
-	text, _ := reader.ReadString('\n')
+	var text string
+	// text, _ = reader.ReadString('\n')
+	fmt.Scanln(&text)
 	return strings.Split(text, "\n")[0]
 }
 
 func selectDifficulty() bool {
 	passLength, _ = strconv.Atoi(readInput("Select password length: "))
-	fmt.Printf("\n%d length.\n", passLength)
+	//fmt.Printf("%d length.\n", passLength)
 	maxDigit, _ = strconv.Atoi(readInput("Select max digit for password (least is 1): "))
-	fmt.Printf("\n%d max.\n", maxDigit)
-	repeatAllowed = readInput("Are repeats allowed? (y/n): ") == "y"
-	if repeatAllowed {
-		fmt.Println("Repeats allowed.")
+	//fmt.Printf("%d max.\n", maxDigit)
+	if maxDigit < passLength {
+		repeatAllowed = true
 	} else {
-		if maxDigit-1 < passLength {
-			fmt.Printf("ERROR: Can't generate password of %d length and digits " +
-				"in 1-%d without repeats. Exiting... \n", passLength, maxDigit)
-			return false
-		}
-		fmt.Println("No repeats.")
+		repeatAllowed = readInput("Are repeats allowed? (y/n): ") == "y"
 	}
-	tries = passLength * 5
+	//if repeatAllowed {
+	//	fmt.Println("Repeats allowed.")
+	//} else {
+	//	//if maxDigit < passLength {
+	//	//	fmt.Printf("ERROR: Can't generate password of %d length and digits " +
+	//	//		"in 1-%d without repeats. Exiting... \n", passLength, maxDigit)
+	//	//	return false
+	//	//}
+	//	fmt.Println("No repeats.")
+	//}
+
+	tries = passLength * maxDigit
 	if !repeatAllowed {
 		tries /= 2
 	}
 	return true
-}
-
-func intro() {
-	fmt.Println("Connecting to database...")
-	time.Sleep(SLEEP * time.Millisecond)
-	fmt.Println("Retrieving encrypted hash list...")
-	time.Sleep(SLEEP * time.Millisecond)
-	fmt.Println("List found. Parsing...")
-	time.Sleep(SLEEP * time.Millisecond)
-	fmt.Print("Username: ")
-	time.Sleep(SLEEP * time.Millisecond)
-	prettyPrint("admin")
-	fmt.Println()
-	fmt.Print("Password: ")
-	time.Sleep(SLEEP * time.Millisecond)
-	prettyPrint("************")
-	fmt.Println()
-	fmt.Print("Bruteforcing the code")
-	time.Sleep(SLEEP * time.Millisecond)
-	fmt.Print(".")
-	time.Sleep(SLEEP * time.Millisecond)
-	fmt.Print(".")
-	time.Sleep(SLEEP * time.Millisecond)
-	fmt.Print(".")
-	time.Sleep(SLEEP * time.Millisecond)
-	fmt.Println(" failed.")
-	time.Sleep(SLEEP * time.Millisecond)
-	fmt.Println("Access violation detected.")
-	time.Sleep(SLEEP * time.Millisecond)
-	fmt.Println("You are being traced.")
-	time.Sleep(SLEEP * time.Millisecond)
-	fmt.Printf("You have %d tries before they find you.", tries)
-	time.Sleep(SLEEP * time.Millisecond)
-}
-
-func prettyPrint(s string) {
-	for i := 0; i < len(s); i++ {
-		fmt.Print(string(s[i]))
-		time.Sleep(70 * time.Millisecond)
-	}
 }
 
 func doesArrHaveInt(arr []int, n int) bool {
@@ -95,11 +61,9 @@ func doesArrHaveInt(arr []int, n int) bool {
 }
 
 func generateTask() string {
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-
 	task := make([]int, passLength)
 	for i := 0; i < passLength; i++ {
-		curr := rnd.Intn(maxDigit-1)+1
+		curr := rnd.Intn(maxDigit)+1
 		if !repeatAllowed {
 			for doesArrHaveInt(task, curr) {
 				curr = rnd.Intn(maxDigit-1)+1
@@ -139,14 +103,21 @@ func checkTarget(target, input string) (int, int) {
 }
 
 func main() {
+	rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
 	if !selectDifficulty() {
 		return
 	}
 	intro()
 	target := generateTask()
+	fmt.Printf("\nPassword of length %d, digits in range 1-%d, ", passLength, maxDigit)
+	if repeatAllowed {
+		fmt.Printf("digits can repeat.")
+	} else {
+		fmt.Printf("no repeating digits.")
+	}
 	// fmt.Print("Target is " + target)
 	for currentTry := 0; currentTry < tries; currentTry++ {
-		currInput := readInput(fmt.Sprintf("\nTry %d/%d >", currentTry+1, tries))
+		currInput := readInput(fmt.Sprintf("\nTry %d/%d > ", currentTry+1, tries))
 		if currInput == target {
 			fmt.Println("ACCESS GRANTED.")
 			return
@@ -157,10 +128,11 @@ func main() {
 		}
 		if currentTry < tries-1 {
 			match, misplaced := checkTarget(target, currInput)
-			fmt.Printf("MATCH: %d, WRONG PLACE DIGITS: %d, %d tries remaining", match, misplaced, tries-currentTry)
+			fmt.Printf("MATCH: %d, WRONG PLACE DIGITS: %d, %d tries remaining", match, misplaced, tries-currentTry-1)
 		}
 	}
 	fmt.Println("YOU HAVE BEEN TRACED.")
 	fmt.Println("CYBER SECURITY IS CONVERGING AT YOUR LOCATION.")
-	fmt.Println("Password was " + target)
+	fmt.Println("HAVE A NICE DAY.")
+	fmt.Println("Password was " + target + ".")
 }
