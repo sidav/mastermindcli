@@ -45,6 +45,6 @@ func intro() {
 func prettyPrint(s string) {
 	for i := 0; i < len(s); i++ {
 		fmt.Print(string(s[i]))
-		time.Sleep(70 * time.Millisecond)
+		time.Sleep(time.Duration(rnd.Intn(100)+50) * time.Millisecond)
 	}
 }
